@@ -1,0 +1,128 @@
+js test note
+
+首先進到資料夾，然後做npm init
+    command line:
+        npm init -y
+
+接著會發現因為你init現在的專案了所以他會產生一個package.json的檔案我們等下會用這個檔案去跑script
+
+安裝jest
+    command line:
+        npm i --save-dev jest
+
+會看到熟悉的node_modules檔案，也會產生package-lock.json
+這樣就已經做好package version控制了
+原本的package.json的code是長這樣
+code:
+{
+  "name": "jstest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cloneArray.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
+}
+
+現在我們要把它改一下
+code:
+{
+  "name": "jstest",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cloneArray.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {},
+  "devDependencies": {
+    "jest": "^24.9.0"
+  }
+}
+
+這樣就可以跑測試了，接著跑第一次我們看一下
+
+接著如果我們要跑什麼的測試的話
+我們就把黨名命名為：檔名.test.js這樣就可以了
+這裡會有兩段
+一段是對一班的測試我們先看一下
+首先我們先見sum.test.js
+code:
+const sum = require('./sum');
+
+test('properly adds two numbers', () => {
+    expect(
+        sum(1, 2)
+    ).toBe(3);
+});
+
+打完以後再打一次npm test接著他就會去跑測試了
+我們會看到passed字樣就代表我們已經測完了
+
+
+後面我們來建立我們的cloneArray.js的測試
+一樣建立cloneArray.test.js檔案
+code:
+const cloneArray = require('./cloneArray');
+
+test('properly clones array', () => {
+    const array = [1, 2, 3];
+    expect(
+        cloneArray(array)
+    ).toBe(
+        array
+    );
+});
+這個時候他會報錯，說我們用來比對的方法錯誤因為他是array
+我們要換一個方法所以我們調一下code:
+const cloneArray = require('./cloneArray');
+
+test('properly clones array', () => {
+    const array = [1, 2, 3];
+    expect(
+        cloneArray(array)
+    ).toStrictEqual(
+        array
+    );
+});
+
+這裡的test case它提供了另一種東西
+code:
+expect(cloneArray(array)).toEqual(array);
+expect(cloneArray(array)).not.toBe(array);
+感覺這樣的寫法是因為當初在弄測試時候沒有考慮到怎麼處理array所以硬擠的做法
+
+這樣的意思是我們要比較嚴格的去比對一定要一樣像是型別或者格式等等的
+但是印象中沒辦法去做比對的應該是object
+
+如果只是想知道有沒有測過的話package.json只要寫test的命令就好如果要知道coverage的話就要在command上加工了
+code:
+"test": "jest --coverage"
+這樣就可以看到完整的coverage了
+現在看起來應該會是100%的狀態
+
+我們回到我們的sum.js裡面我們加上一支新的function
+code:
+function sum(a, b) {
+    return a + b;
+};
+
+function helper() {
+    console.log('helper');
+}
+
+module.exports = sum;
+再跑一次npm test接下來你會到我們的coverage變成66.67
+點開測試報告還可以看到到底是哪隻檔案的覆蓋率太低
+然後可以在自己模擬如果改了code以後測試報告會長怎樣
+然後現在做的是單元測試就是把東西拆的小小的這樣測
