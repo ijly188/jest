@@ -1,5 +1,6 @@
 js test note
 
+參考連結：https://wcc723.github.io/development/2020/02/02/jest-intro/
 首先進到資料夾，然後做npm init
     command line:
         npm init -y
@@ -126,3 +127,470 @@ module.exports = sum;
 點開測試報告還可以看到到底是哪隻檔案的覆蓋率太低
 然後可以在自己模擬如果改了code以後測試報告會長怎樣
 然後現在做的是單元測試就是把東西拆的小小的這樣測
+
+
+參考連結：https://ithelp.ithome.com.tw/articles/10238581
+
+1.
+在 /js/ 裏面建一隻新的檔案 calculation_og.js
+然後把 code 放上去
+`
+  const sum = (a, b) => a - b // 有 bug
+
+  const result = sum(8, 7)
+
+  const expected = 15
+  if (result !== expected) {
+    throw new Error(`${result} is not equal to ${expected}`)
+  }
+`
+
+使用 node 去讀它
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/calculation_og.js
+result:     
+  /Users/terry.yao/project/jest/js/calculation.js:7
+        throw new Error(`${result} is not equal to ${expected}`)
+        ^
+
+  Error: 1 is not equal to 15
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/calculation.js:7:8)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+
+這樣就完成最基本的測試狀態了
+
+把本來的 calculation_og.js 複製一下改名 calculation_fix.js
+然後把 code 改成下面這樣
+`
+  const sum = (a, b) => a + b
+  const subtract = (a, b) => a - b
+
+  let result = sum(8, 7)
+  let expected = 15
+  if (result !== expected) {
+    throw new Error(`${result} is not equal to ${expected}`)
+  }
+
+  result = subtract(8, 7)
+  expected = 1
+  if (result !== expected) {
+    throw new Error(`${result} is not equal to ${expected}`)
+  }
+`
+
+我們本來有 bug 的 - 改成 +
+再加上正常來講的 - 的邏輯
+
+然後再用 node 再去讀它一次
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/calculation_fix.js
+result:     
+
+會完全沒有反應
+因為你沒有錯的地方所以他沒有理你
+
+
+現在再跑一次把測試邏輯抽出來
+但是把剛剛 calculation 改回正常的 .js 檔案
+但是我們把下面的測試邏輯抽走
+然後再把現在的 code 做 module exports
+讓他 sum 一樣 + 打成 - 這樣等下才能看測試的成果
+
+calculation.js
+`
+  const sum = (a, b) => a - b // 有 bug
+  const subtract = (a, b) => a - b
+
+  module.exports = {
+    sum,
+    subtract,
+  }
+`
+
+assertion.js
+`
+  const { sum, subtract } = require('./calculation')
+
+  let result, expected
+
+  result = sum(8, 7)
+  expected = 15
+  if (result !== expected) {
+    throw new Error(`${result} is not equal to ${expected}`)
+  }
+
+  result = subtract(8, 7)
+  expected = 1
+  if (result !== expected) {
+    throw new Error(`${result} is not equal to ${expected}`)
+  }
+`
+
+然後再用 node 再去讀它一次
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/assertion.js
+result:     
+  /Users/terry.yao/project/jest/js/assertion.js:25
+        throw new Error(`${result} is not equal to ${expected}`)
+        ^
+
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/assertion.js:25:15)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/assertion.js:19:16)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+
+現在來建立一個 framework.js 
+code:
+`
+function test(title, callback) {
+  try {
+    callback()
+    console.log(`✅ ${title}`)
+  } catch (error) {
+    console.error(`❌ ${title}`)
+    console.error(error)
+  }
+};
+
+module.exports = {
+  test,
+}
+`
+
+這裡是處理跳出訊息，讓錯誤訊息更清楚一點
+
+然後 assertion.js 裏面引用 test function
+code:
+`
+const { sum, subtract } = require('./calculation');
+const { test } = require('./framework');
+
+function expect(result) {
+  return {
+    toBe(expected) {
+      if (result !== expected) {
+        throw new Error(`${result} is not equal to ${expected}`)
+      }
+    },
+  }
+}
+
+
+test('add numbers', () => {
+  const result = sum(8, 7)
+  const expected = 15
+  expect(result).toBe(expected)
+})
+
+test('subtract numbers', () => {
+  const result = subtract(8, 7)
+  const expected = 1
+  expect(result).toBe(expected)
+})
+
+
+
+
+module.exports = {
+  expect,
+}
+`
+
+然後再次使用 node 去測 assertion.js
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/assertion.js
+result:     
+  ❌ add numbers
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/assertion.js:26:15)
+      at /Users/terry.yao/project/jest/js/assertion.js:36:18
+      at test (/Users/terry.yao/project/jest/js/framework.js:3:5)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/assertion.js:33:1)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+  ✅ subtract numbers
+
+
+接著準備來測試非同步
+單純想做非同步的話一開始的思路一定是想說把 test function 改成 async/await 這樣
+assertion.js
+code:
+`
+const { sum, subtract } = require('./calculation');
+const { test } = require('./framework');
+
+function expect(result) {
+  return {
+    toBe(expected) {
+      if (result !== expected) {
+        throw new Error(`${result} is not equal to ${expected}`)
+      }
+    },
+  }
+}
+
+test('add numbers', async () => {
+  const result = await sum(8, 7)
+  const expected = 15
+  expect(result).toBe(expected)
+})
+test('subtract numbers', async () => {
+  const result = await subtract(8, 7)
+  const expected = 1
+  expect(result).toBe(expected)
+})
+
+module.exports = {
+  expect,
+}
+`
+
+接著再跑一次 command
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/assertion.js
+result:     
+✅ add numbers
+✅ subtract numbers
+(node:14095) UnhandledPromiseRejectionWarning: ReferenceError: sumAsync is not defined
+    at /Users/terry.yao/project/jest/js/assertion.js:34:18
+    at test (/Users/terry.yao/project/jest/js/framework.js:3:5)
+    at Object.<anonymous> (/Users/terry.yao/project/jest/js/assertion.js:33:1)
+    at Module._compile (internal/modules/cjs/loader.js:1158:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+    at Module.load (internal/modules/cjs/loader.js:1002:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+    at internal/main/run_main_module.js:18:47
+(node:14095) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 1)
+(node:14095) [DEP0018] DeprecationWarning: Unhandled promise rejections are deprecated. In the future, promise rejections that are not handled will terminate the Node.js process with a non-zero exit code.
+(node:14095) UnhandledPromiseRejectionWarning: ReferenceError: subtractAsync is not defined
+    at /Users/terry.yao/project/jest/js/assertion.js:39:18
+    at test (/Users/terry.yao/project/jest/js/framework.js:3:5)
+    at Object.<anonymous> (/Users/terry.yao/project/jest/js/assertion.js:38:1)
+    at Module._compile (internal/modules/cjs/loader.js:1158:30)
+    at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+    at Module.load (internal/modules/cjs/loader.js:1002:32)
+    at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+    at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+    at internal/main/run_main_module.js:18:47
+(node:14095) UnhandledPromiseRejectionWarning: Unhandled promise rejection. This error originated either by throwing inside of an async function without a catch block, or by rejecting a promise which was not handled with .catch(). To terminate the node process on unhandled promise rejection, use the CLI flag `--unhandled-rejections=strict` (see https://nodejs.org/api/cli.html#cli_unhandled_rejections_mode). (rejection id: 2)
+
+執行以後發現怎麼可能變成會過？
+還有一個奇怪的錯誤 UnhandledPromiseRejectionWarning
+看起來是針對沒有處理 promise 的各種狀態
+所以 test function 也改成 async function 然後 await function 改成 callback function
+framework.js
+code:
+`
+async function test(title, callback) {
+  try {
+    await callback()
+    console.log(`✅ ${title}`)
+  } catch (error) {
+    console.error(`❌ ${title}`)
+    console.error(error)
+  }
+}
+
+module.exports = {
+  test,
+}
+`
+
+再跑一次 command
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/assertion.js
+result:     
+  ❌ add numbers
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/assertion.js:26:15)
+      at /Users/terry.yao/project/jest/js/assertion.js:48:18
+      at async test (/Users/terry.yao/project/jest/js/framework.js:3:5)
+  ✅ subtract numbers
+
+回頭把 assertion.js 裏面同事兼顧同步非同步一起跑看看
+code:
+`
+const { sum, subtract } = require('./calculation');
+const { test } = require('./framework');
+
+function expect(result) {
+  return {
+    toBe(expected) {
+      if (result !== expected) {
+        throw new Error(`${result} is not equal to ${expected}`)
+      }
+    },
+  }
+}
+
+// 同步區
+test('同步區 add numbers', () => {
+  const result = sum(8, 7)
+  const expected = 15
+  expect(result).toBe(expected)
+})
+
+test('同步區 subtract numbers', () => {
+  const result = subtract(8, 7)
+  const expected = 1
+  expect(result).toBe(expected)
+})
+
+// 非同步區
+test('非同步區 add numbers', async () => {
+  const result = await sum(8, 7)
+  const expected = 15
+  expect(result).toBe(expected)
+})
+test('非同步區 subtract numbers', async () => {
+  const result = await subtract(8, 7)
+  const expected = 1
+  expect(result).toBe(expected)
+})
+
+module.exports = {
+  expect,
+}
+`
+
+folder:     cd /Users/terry.yao/project/jest
+command:    node js/assertion.js
+result:     
+  ❌ 同步區 add numbers
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/assertion.js:26:15)
+      at /Users/terry.yao/project/jest/js/assertion.js:36:18
+      at test (/Users/terry.yao/project/jest/js/framework.js:3:11)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/assertion.js:33:1)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+  ✅ 同步區 subtract numbers
+  ❌ 非同步區 add numbers
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/assertion.js:26:15)
+      at /Users/terry.yao/project/jest/js/assertion.js:49:18
+      at processTicksAndRejections (internal/process/task_queues.js:97:5)
+      at async test (/Users/terry.yao/project/jest/js/framework.js:3:5)
+  ✅ 非同步區 subtract numbers
+
+看起來好像有點像樣
+
+現在看起來要補的只有讓這個 framework.js 做成 global 使用的檔案
+舊的檔案我們都先不處理
+開一個新的 global-framework.js 把 test function 跟 expect function 放進去
+code:
+`
+async function test(title, callback) {
+  try {
+    await callback();
+    console.log(`✅ ${title}`);
+  } catch (error) {
+    console.error(`❌ ${title}`);
+    console.error(error);
+  }
+}
+
+function expect(result) {
+  return {
+    toBe(expected) {
+      if (result !== expected) {
+        throw new Error(`${result} is not equal to ${expected}`);
+      }
+    },
+  };
+}
+
+global.test = test;
+global.expect = expect;
+`
+
+然後建立一支 global-assertion.js 檔案
+code:
+`
+const { sum, subtract, sumAsync, subtractAsync } = require('./calculation')
+
+test('add numbers', () => {
+  const result = sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers', () => {
+  const result = subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+test('add numbers async', async () => {
+  const result = await sumAsync(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers async', async () => {
+  const result = await subtractAsync(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+`
+
+接著就可以繼續使用測試了
+folder:     cd /Users/terry.yao/project/jest
+command:    node --require ./js/global-framework.js ./js/global-assertion.js 
+result:     
+  ❌ add numbers
+  Error: 1 is not equal to 15
+      at Object.toBe (/Users/terry.yao/project/jest/js/global-framework.js:15:15)
+      at /Users/terry.yao/project/jest/js/global-assertion.js:6:18
+      at test (/Users/terry.yao/project/jest/js/global-framework.js:3:11)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/global-assertion.js:3:1)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+  ✅ subtract numbers
+  ❌ add numbers async
+  TypeError: sumAsync is not a function
+      at /Users/terry.yao/project/jest/js/global-assertion.js:14:24
+      at test (/Users/terry.yao/project/jest/js/global-framework.js:3:11)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/global-assertion.js:13:1)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+  ❌ subtract numbers async
+  TypeError: subtractAsync is not a function
+      at /Users/terry.yao/project/jest/js/global-assertion.js:19:24
+      at test (/Users/terry.yao/project/jest/js/global-framework.js:3:11)
+      at Object.<anonymous> (/Users/terry.yao/project/jest/js/global-assertion.js:18:1)
+      at Module._compile (internal/modules/cjs/loader.js:1158:30)
+      at Object.Module._extensions..js (internal/modules/cjs/loader.js:1178:10)
+      at Module.load (internal/modules/cjs/loader.js:1002:32)
+      at Function.Module._load (internal/modules/cjs/loader.js:901:14)
+      at Function.executeUserEntryPoint [as runMain] (internal/modules/run_main.js:74:12)
+      at internal/main/run_main_module.js:18:47
+
+
+### node 後面加上 --require 是指在執行之前預先載入特定 module，這裡指的是載入 global-framework.js
+
+上面這些就做完簡易的測試初始模組了
