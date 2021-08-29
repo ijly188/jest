@@ -594,3 +594,210 @@ result:
 ### node 後面加上 --require 是指在執行之前預先載入特定 module，這裡指的是載入 global-framework.js
 
 上面這些就做完簡易的測試初始模組了
+
+
+如果我們照著上面那篇寫得繼續往下走
+他會叫我們輸入 command: npx jest
+但是輸入以後我們會因為之前有寫的 .test.js 檔案被讀取
+看起來根本不知道發生什麼事情
+
+接著參考這篇
+https://titangene.github.io/article/jest-build-test-env.html
+看一下 jest 有沒有什麼設定我沒有設定到
+然後設定 jest 初始化 command: npx jest --init
+folder:     cd /Users/terry.yao/project/jest
+command:    npx jest --init
+result:     
+  The following questions will help Jest to create a suitable configuration for your project
+
+  ✔ Would you like to use Jest when running "test" script in "package.json"? … yes
+  ✔ Choose the test environment that will be used for testing › node
+  ✔ Do you want Jest to add coverage reports? … yes
+  ✔ Automatically clear mock calls and instances between every test? … yes
+
+  ✏️  Modified /Users/terry.yao/project/jest/package.json
+
+  📝  Configuration file created at /Users/terry.yao/project/jest/jest.config.js
+
+這樣就把 jest.config.js 建出來了
+
+好的然後在他的 day 2 最下面是建立一個 jest.test.js 檔案，裡面放的是 global-assertion.js 裏面的 code
+然後準備用 jest 去跑
+因為我們現在裏面已經有很多 test 檔案了所以等下會針對 command 做一些調整
+然後 code 的部分也會調整一些東西
+global-assertion.js 裏面的 sumAsync/subtractAsync 的 function 根本不存在
+所以我們把它改成原本的 sum, subtract
+code:
+`
+const { sum, subtract } = require('./calculation')
+
+test('add numbers', () => {
+  const result = sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers', () => {
+  const result = subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+test('add numbers async', async () => {
+  const result = await sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers async', async () => {
+  const result = await subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+`
+
+然後剛剛建好的 jest.test.js
+code:
+`
+const { sum, subtract } = require('./calculation')
+
+test('add numbers', () => {
+  const result = sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers', () => {
+  const result = subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+test('add numbers async', async () => {
+  const result = await sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
+test('subtract numbers async', async () => {
+  const result = await subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
+`
+
+如果沒有改成這樣的話我們用 jest 去跑的話
+folder:     cd /Users/terry.yao/project/jest
+command:    npm run test ./js/jest.test.js
+result:     
+  > jstest@1.0.0 test /Users/terry.yao/project/jest
+  > jest "./js/jest.test.js"
+
+  FAIL  js/jest.test.js
+    ✕ add numbers (5ms)
+    ✓ subtract numbers
+    ✕ add numbers async (1ms)
+    ✕ subtract numbers async
+
+    ● add numbers
+
+      expect(received).toBe(expected) // Object.is equality
+
+      Expected: 15
+      Received: 1
+
+        4 |   const result = sum(8, 7);
+        5 |   const expected = 15;
+      > 6 |   expect(result).toBe(expected);
+          |                  ^
+        7 | });
+        8 | test('subtract numbers', () => {
+        9 |   const result = subtract(8, 7);
+
+        at Object.<anonymous> (js/jest.test.js:6:18)
+
+    ● add numbers async
+
+      TypeError: sumAsync is not a function
+
+        12 | });
+        13 | test('add numbers async', async () => {
+      > 14 |   const result = await sumAsync(8, 7);
+          |                        ^
+        15 |   const expected = 15;
+        16 |   expect(result).toBe(expected);
+        17 | });
+
+        at Object.<anonymous> (js/jest.test.js:14:24)
+
+    ● subtract numbers async
+
+      TypeError: subtractAsync is not a function
+
+        17 | });
+        18 | test('subtract numbers async', async () => {
+      > 19 |   const result = await subtractAsync(8, 7);
+          |                        ^
+        20 |   const expected = 1;
+        21 |   expect(result).toBe(expected);
+
+快速翻譯的意思就是那個方法不存在
+
+改過之後再跑一次
+folder:     cd /Users/terry.yao/project/jest
+command:    npm run test ./js/jest.test.js
+result:     
+  > jstest@1.0.0 test /Users/terry.yao/project/jest
+  > jest "./js/jest.test.js"
+
+  FAIL  js/jest.test.js
+    ✕ add numbers (4ms)
+    ✓ subtract numbers
+    ✕ add numbers async
+    ✓ subtract numbers async
+
+    ● add numbers
+
+      expect(received).toBe(expected) // Object.is equality
+
+      Expected: 15
+      Received: 1
+
+        4 |   const result = sum(8, 7);
+        5 |   const expected = 15;
+      > 6 |   expect(result).toBe(expected);
+          |                  ^
+        7 | });
+        8 | test('subtract numbers', () => {
+        9 |   const result = subtract(8, 7);
+
+        at Object.<anonymous> (js/jest.test.js:6:18)
+
+    ● add numbers async
+
+      expect(received).toBe(expected) // Object.is equality
+
+      Expected: 15
+      Received: 1
+
+        14 |   const result = await sum(8, 7);
+        15 |   const expected = 15;
+      > 16 |   expect(result).toBe(expected);
+          |                  ^
+        17 | });
+        18 | test('subtract numbers async', async () => {
+        19 |   const result = await subtract(8, 7);
+
+        at Object.<anonymous> (js/jest.test.js:16:18)
+
+  Test Suites: 1 failed, 1 total
+  Tests:       2 failed, 2 passed, 4 total
+  Snapshots:   0 total
+  Time:        0.551s, estimated 1s
+  Ran all test suites matching /.\/js\/jest.test.js/i.
+  npm ERR! code ELIFECYCLE
+  npm ERR! errno 1
+  npm ERR! jstest@1.0.0 test: `jest "./js/jest.test.js"`
+  npm ERR! Exit status 1
+  npm ERR! 
+  npm ERR! Failed at the jstest@1.0.0 test script.
+  npm ERR! This is probably not a problem with npm. There is likely additional logging output above.
+
+  npm ERR! A complete log of this run can be found in:
+  npm ERR!     /Users/terry.yao/.npm/_logs/2021-08-29T03_20_21_345Z-debug.log
+
+基本上這樣跟我們本來預期的測試結果也比較接近
