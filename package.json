@@ -4,13 +4,31 @@
   "description": "",
   "main": "cloneArray.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint  --ignore-path .gitignore .",
+    "prettier": "prettier --ignore-path .gitignore \"**/*.+(js|json)\"",
+    "format": "npm run prettier -- --write",
+    "check-format": "npm run prettier -- --list-different",
+    "validate": "npm run check-format && npm run lint",
+    "pro": "npm-run-all --parallel check-format lint build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "dependencies": {},
+  "dependencies": {
+    "prettier": "^2.3.2"
+  },
   "devDependencies": {
-    "jest": "^24.9.0"
+    "eslint": "^7.32.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.24.2",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-react": "^7.25.1",
+    "eslint-plugin-react-hooks": "^4.2.0",
+    "husky": "^7.0.2",
+    "jest": "^24.9.0",
+    "lint-staged": "^11.1.2",
+    "npm-run-all": "^4.1.5"
   }
 }

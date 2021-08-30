@@ -1,5 +1,5 @@
 function cloneArray(array) {
-    return [...array];
+  return [...array];
 }
 
 module.exports = cloneArray;
