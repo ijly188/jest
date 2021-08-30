@@ -23,40 +23,37 @@ function expect(result) {
   return {
     toBe(expected) {
       if (result !== expected) {
-        throw new Error(`${result} is not equal to ${expected}`)
+        throw new Error(`${result} is not equal to ${expected}`);
       }
     },
-  }
+  };
 }
 
 // 同步區
 test('同步區 add numbers', () => {
-  const result = sum(8, 7)
-  const expected = 15
-  expect(result).toBe(expected)
-})
+  const result = sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
 
 test('同步區 subtract numbers', () => {
-  const result = subtract(8, 7)
-  const expected = 1
-  expect(result).toBe(expected)
-})
+  const result = subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
 
 // 非同步區
 test('非同步區 add numbers', async () => {
-  const result = await sum(8, 7)
-  const expected = 15
-  expect(result).toBe(expected)
-})
+  const result = await sum(8, 7);
+  const expected = 15;
+  expect(result).toBe(expected);
+});
 test('非同步區 subtract numbers', async () => {
-  const result = await subtract(8, 7)
-  const expected = 1
-  expect(result).toBe(expected)
-})
-
-
-
+  const result = await subtract(8, 7);
+  const expected = 1;
+  expect(result).toBe(expected);
+});
 
 module.exports = {
   expect,
-}
+};
